@@ -1,0 +1,4 @@
+image_size: 32
+samples_per_dataset: 24
+val_ratio: 0.2
+num_workers: 0
