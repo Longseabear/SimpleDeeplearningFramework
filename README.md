@@ -20,50 +20,100 @@ Core stack:
 - `configs/`: Hydra config files
 - `scripts/`: setup, data prep, train, and reproduce helpers
 
-## Quick Start On A New PC
+## Step By Step Setup On A New Windows PC
 
-Windows PowerShell:
+### 1. Clone the repository
 
 ```powershell
 git clone https://github.com/Longseabear/SimpleDeeplearningFramework.git
 cd SimpleDeeplearningFramework
-.\scripts\setup.ps1
-.\scripts\train.ps1
 ```
 
-What happens:
+### 2. If PowerShell script execution is blocked
 
-1. `scripts/setup.ps1` creates `.venv` and installs `requirements.txt`
-2. `scripts/prepare_data.py` downloads MNIST and exports PNG files to `datasets/mnist_png/`
-3. `metadata.csv` is created at `data/processed/metadata.csv`
-4. `train.py` starts training with Hydra, TensorBoard, and checkpoints
+If `Activate.ps1` or `scripts/*.ps1` fails because of execution policy, run one of these first.
 
-## Manual Commands
+Current terminal session only:
 
-Create environment and install packages:
+```powershell
+Set-ExecutionPolicy -Scope Process Bypass
+```
+
+Current user:
+
+```powershell
+Set-ExecutionPolicy -Scope CurrentUser RemoteSigned
+```
+
+### 3. Create the virtual environment
 
 ```powershell
 python -m venv .venv
+```
+
+### 4. Activate the virtual environment
+
+```powershell
 .\.venv\Scripts\Activate.ps1
+```
+
+### 5. Install Python packages
+
+```powershell
 pip install -r requirements.txt
 ```
+
+### 6. Prepare the dataset
+
+This downloads MNIST, exports PNG files, and creates `metadata.csv`.
+
+```powershell
+python .\scripts\prepare_data.py
+```
+
+### 7. Start training
+
+```powershell
+python .\train.py
+```
+
+## Recommended Shortcut After Installation
+
+Once `.venv` already exists and packages are installed, you can use the helper script:
+
+```powershell
+.\scripts\train.ps1
+```
+
+This will:
+
+1. prepare MNIST PNG files and metadata
+2. start training with the current Hydra config
+
+## Common Commands
 
 Prepare dataset only:
 
 ```powershell
-.\.venv\Scripts\python.exe .\scripts\prepare_data.py
+python .\scripts\prepare_data.py
 ```
 
 Train with default config:
 
 ```powershell
-.\.venv\Scripts\python.exe .\train.py
+python .\train.py
 ```
 
 Train with Hydra overrides:
 
 ```powershell
 .\scripts\train.ps1 train.epochs=3 train.batch_size=64 data.noise_std=0.3 seed=123
+```
+
+Install everything from scratch with helper script:
+
+```powershell
+.\scripts\setup.ps1
 ```
 
 ## Reproducing A Previous Run
@@ -113,7 +163,7 @@ MNIST data:
 ## TensorBoard
 
 ```powershell
-.\.venv\Scripts\python.exe -m tensorboard.main --logdir logs
+python -m tensorboard.main --logdir logs
 ```
 
 Then open:
@@ -140,3 +190,4 @@ Current project dependencies:
 - `pandas>=2.0,<3.0`
 - `numpy>=1.26,<3.0`
 - `tqdm>=4.66,<5.0`
+- `torchinfo>=1.8,<2.0`
