@@ -11,6 +11,10 @@ Core stack:
 - pandas metadata DataFrame
 - Simple baseline model with 3 convolution layers and 3 fully connected layers
 
+Recommended Python version:
+
+- Python 3.12
+
 ## Project Layout
 
 - `train.py`: training entry point only
@@ -48,7 +52,7 @@ Set-ExecutionPolicy -Scope CurrentUser RemoteSigned
 ### 3. Create the virtual environment
 
 ```powershell
-python -m venv .venv
+py -3.12 -m venv .venv
 ```
 
 ### 4. Activate the virtual environment
