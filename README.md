@@ -77,6 +77,45 @@ python .\scripts\prepare_data.py
 python .\train.py
 ```
 
+## Manual MNIST Download
+
+If automatic download is blocked by your network or security policy, download the original MNIST files manually.
+
+Download these 4 files:
+
+- `train-images-idx3-ubyte.gz`
+- `train-labels-idx1-ubyte.gz`
+- `t10k-images-idx3-ubyte.gz`
+- `t10k-labels-idx1-ubyte.gz`
+
+Direct links:
+
+- https://storage.googleapis.com/cvdf-datasets/mnist/train-images-idx3-ubyte.gz
+- https://storage.googleapis.com/cvdf-datasets/mnist/train-labels-idx1-ubyte.gz
+- https://storage.googleapis.com/cvdf-datasets/mnist/t10k-images-idx3-ubyte.gz
+- https://storage.googleapis.com/cvdf-datasets/mnist/t10k-labels-idx1-ubyte.gz
+
+Place them here:
+
+```text
+data/raw/MNIST/raw/train-images-idx3-ubyte.gz
+data/raw/MNIST/raw/train-labels-idx1-ubyte.gz
+data/raw/MNIST/raw/t10k-images-idx3-ubyte.gz
+data/raw/MNIST/raw/t10k-labels-idx1-ubyte.gz
+```
+
+Then run:
+
+```powershell
+python .\scripts\prepare_data.py
+```
+
+Notes:
+
+- These are not PNG files
+- They are the original MNIST files used by `torchvision.datasets.MNIST`
+- `scripts/prepare_data.py` will convert them into PNG files under `datasets/mnist_png/`
+
 ## Recommended Shortcut After Installation
 
 Once `.venv` already exists and packages are installed, you can use the helper script:
