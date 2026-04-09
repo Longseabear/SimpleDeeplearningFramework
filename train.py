@@ -12,6 +12,7 @@ from src.data.preprocess import build_metadata
 from src.models.denoiser import SimpleDenoiser
 from src.training.trainer import fit
 from src.utils.logging_utils import configure_logging
+from src.utils.model_summary import log_model_summary
 from src.utils.paths import resolve_project_path
 from src.utils.repro import seed_everything, seed_worker
 from src.utils.runtime import collect_runtime_info, save_runtime_info
@@ -59,6 +60,10 @@ def main(cfg: DictConfig) -> None:
         len(metadata.loc[metadata["split"] == "validation"]),
         len(metadata.loc[metadata["split"] == "test"]),
     )
+    summary_device = torch.device("cuda" if torch.cuda.is_available() and cfg.train.device == "auto" else cfg.train.device)
+    if cfg.train.device == "auto" and not torch.cuda.is_available():
+        summary_device = torch.device("cpu")
+    log_model_summary(logger=logger, model=model, image_size=cfg.data.image_size, device=summary_device)
 
     fit(
         cfg=cfg,
