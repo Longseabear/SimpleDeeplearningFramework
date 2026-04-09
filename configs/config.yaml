@@ -6,9 +6,10 @@ defaults:
 
 seed: 42
 project_name: deep_learning_framework
-run_name: baseline
+run_name: mnist_denoising
 paths:
   data_root: datasets
+  download_root: data/raw
   metadata_csv: data/processed/metadata.csv
   tensorboard_root: logs
   checkpoints_dirname: checkpoints

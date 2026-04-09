@@ -1,15 +1,17 @@
-import math
+from pathlib import Path
 
 import pandas as pd
 import torch
+from PIL import Image
 from torch import Tensor
 from torch.utils.data import Dataset
+from torchvision.transforms.functional import pil_to_tensor
 
 
-class SyntheticDenoisingDataset(Dataset):
-    def __init__(self, dataframe: pd.DataFrame, image_size: int, base_seed: int) -> None:
+class MnistDenoisingDataset(Dataset):
+    def __init__(self, dataframe: pd.DataFrame, noise_std: float, base_seed: int) -> None:
         self.dataframe = dataframe.reset_index(drop=True)
-        self.image_size = image_size
+        self.noise_std = noise_std
         self.base_seed = base_seed
 
     def __len__(self) -> int:
@@ -17,12 +19,9 @@ class SyntheticDenoisingDataset(Dataset):
 
     def __getitem__(self, index: int) -> dict[str, Tensor | str | int]:
         row = self.dataframe.iloc[index]
-        sample_seed = self.base_seed + (index * 1009) + (int(row["sample_id"]) * 17)
-        generator = torch.Generator().manual_seed(sample_seed)
-
-        clean = self._generate_clean_image(generator)
-        noise = torch.randn((1, self.image_size, self.image_size), generator=generator) * 0.08
-        noisy = torch.clamp(clean + noise, 0.0, 1.0)
+        clean = _load_grayscale_image(Path(row["target_path"]))
+        noise = torch.randn(clean.shape, generator=self._build_generator(index, int(row["sample_id"])))
+        noisy = torch.clamp(clean + (noise * self.noise_std), 0.0, 1.0)
 
         return {
             "input": noisy,
@@ -31,19 +30,12 @@ class SyntheticDenoisingDataset(Dataset):
             "sample_id": int(row["sample_id"]),
         }
 
-    def _generate_clean_image(self, generator: torch.Generator) -> Tensor:
-        coords = torch.linspace(-1.0, 1.0, self.image_size)
-        yy, xx = torch.meshgrid(coords, coords, indexing="ij")
+    def _build_generator(self, index: int, sample_id: int) -> torch.Generator:
+        sample_seed = self.base_seed + (index * 1009) + (sample_id * 17)
+        return torch.Generator().manual_seed(sample_seed)
 
-        freq_x = int(torch.randint(1, 4, (1,), generator=generator).item())
-        freq_y = int(torch.randint(1, 4, (1,), generator=generator).item())
-        phase = float(torch.rand(1, generator=generator).item()) * math.pi
-        sigma = 0.2 + float(torch.rand(1, generator=generator).item()) * 0.35
-        shift_x = float(torch.rand(1, generator=generator).item()) * 0.6 - 0.3
-        shift_y = float(torch.rand(1, generator=generator).item()) * 0.6 - 0.3
 
-        wave = torch.sin(freq_x * math.pi * xx + phase) * torch.cos(freq_y * math.pi * yy + phase)
-        blob = torch.exp(-((xx - shift_x) ** 2 + (yy - shift_y) ** 2) / (2 * sigma**2))
-        clean = 0.5 * wave + 0.5 * blob
-        clean = (clean - clean.min()) / (clean.max() - clean.min() + 1e-8)
-        return clean.unsqueeze(0)
+def _load_grayscale_image(path: Path) -> Tensor:
+    with Image.open(path) as image:
+        grayscale = image.convert("L")
+        return pil_to_tensor(grayscale).float() / 255.0

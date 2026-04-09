@@ -2,39 +2,40 @@ import torch
 from torch import Tensor, nn
 
 
-class BasicDenoiseBlock(nn.Module):
-    def __init__(self, channels: int, kernel_size: int) -> None:
-        super().__init__()
-        padding = kernel_size // 2
-        self.block = nn.Sequential(
-            nn.Conv2d(channels, channels, kernel_size=kernel_size, padding=padding),
-            nn.ReLU(inplace=True),
-            nn.Conv2d(channels, channels, kernel_size=kernel_size, padding=padding),
-            nn.ReLU(inplace=True),
-        )
-
-    def forward(self, x: Tensor) -> Tensor:
-        return self.block(x)
-
-
 class SimpleDenoiser(nn.Module):
     def __init__(
         self,
         in_channels: int,
-        out_channels: int,
-        hidden_channels: int,
-        num_blocks: int,
-        kernel_size: int,
+        image_size: int,
+        conv_channels: list[int],
+        hidden_dim: int,
+        bottleneck_dim: int,
     ) -> None:
         super().__init__()
-        padding = kernel_size // 2
-        self.stem = nn.Conv2d(in_channels, hidden_channels, kernel_size=kernel_size, padding=padding)
-        self.blocks = nn.Sequential(
-            *[BasicDenoiseBlock(hidden_channels, kernel_size=kernel_size) for _ in range(num_blocks)]
+        if len(conv_channels) != 3:
+            raise ValueError("conv_channels must contain exactly 3 values.")
+
+        conv_layers: list[nn.Module] = []
+        current_channels = in_channels
+        for next_channels in conv_channels:
+            conv_layers.append(nn.Conv2d(current_channels, next_channels, kernel_size=3, padding=1))
+            conv_layers.append(nn.ReLU(inplace=True))
+            current_channels = next_channels
+        self.encoder = nn.Sequential(*conv_layers)
+
+        flattened_dim = current_channels * image_size * image_size
+        self.decoder = nn.Sequential(
+            nn.Flatten(),
+            nn.Linear(flattened_dim, hidden_dim),
+            nn.ReLU(inplace=True),
+            nn.Linear(hidden_dim, bottleneck_dim),
+            nn.ReLU(inplace=True),
+            nn.Linear(bottleneck_dim, image_size * image_size),
+            nn.Sigmoid(),
         )
-        self.head = nn.Conv2d(hidden_channels, out_channels, kernel_size=kernel_size, padding=padding)
+        self.image_size = image_size
 
     def forward(self, x: Tensor) -> Tensor:
-        features = torch.relu(self.stem(x))
-        residual = self.head(self.blocks(features))
-        return torch.clamp(x - residual, 0.0, 1.0)
+        features = self.encoder(x)
+        restored = self.decoder(features)
+        return restored.view(-1, 1, self.image_size, self.image_size)

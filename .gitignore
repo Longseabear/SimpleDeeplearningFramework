@@ -6,7 +6,9 @@ __pycache__/
 
 outputs/
 logs/
+data/raw/
 data/processed/
+datasets/mnist_png/
 
 .DS_Store
 Thumbs.db

@@ -1,4 +1,7 @@
-image_size: 32
-samples_per_dataset: 24
-val_ratio: 0.2
+image_size: 28
+train_ratio: 0.8
+val_ratio: 0.1
+test_ratio: 0.1
+noise_std: 0.25
 num_workers: 0
+force_rebuild: false
